@@ -143,7 +143,11 @@ obj_stem_model.set_initial_values(obj_stem_par);
 obj_stem_EM_options = stem_EM_options();
 obj_stem_EM_options.exit_tol_par = 0.002;                          % EM algorithm stops if the maximum relative norm of the model parameters between two consecutive iterations EM is below this value
 obj_stem_EM_options.max_iterations = 1000;                          % max iterations EM algorithm
-obj_stem_model.EM_estimate(obj_stem_EM_options);            
+
+tic;    % avvia timer solo per l’EM
+obj_stem_model.EM_estimate(obj_stem_EM_options);
+time_EM = toc;   % tempo totale EM in secondi
+
 obj_stem_model.set_varcov;                                         % variance-covariance matrix of the estimated model parameters (std)
 obj_stem_model.print()
 obj_stem_model.print_par()
@@ -163,6 +167,9 @@ statistics_md.R2_v = obj_stem_model.stem_validation_result{1}.cv_R2_s;
 statistics_md.EM_iterations = obj_stem_model.stem_EM_result.iterations;
 statistics_md.res = obj_stem_model.stem_validation_result{1}.res_back;              % measure unit of the problem
 statistics_md.RMSE_v = sqrt(mean(statistics_md.res.^2));
+statistics_md.time_EM = time_EM;                                                    % tempo totale numero iterazioni
+
+fprintf("Tempo totale EM: %.4f secondi\n", time_EM);
 
 %% Residuals analysis
 res_sta =  obj_stem_model.stem_validation_result{1}.res;

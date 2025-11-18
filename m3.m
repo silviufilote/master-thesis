@@ -153,33 +153,33 @@ colors = [
     0.85 0 0;    % Red for cluster 1
     0 0.85 0;    % Green for cluster 2
     0 0 0.85;    % Blue for cluster 3
-    0.85 0.85 0; % Yellow for cluster 4
+    0 0.85 0.85;  % Cyan for cluster 4
     0.85 0.5 0;  % Orange for cluster 5
     0.5 0 0.5;   % Purple for cluster 6
     0.5 0.5 0;   % Olive for cluster 7
 ];
 
 % Plot each cluster with a different color
-figure
-geoscatter(cl1_lan, cl1_lon, 80, '^', ...
+figure('Position', [0, 0, 1080, 1080])
+geoscatter(cl1_lan, cl1_lon, 200, '^', ...
     'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(1, :), 'LineWidth', 1.5); % Red triangles
 hold on
-geoscatter(cl2_lan, cl2_lon, 80, '^', ...
+geoscatter(cl2_lan, cl2_lon, 200, '^', ...
     'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(2, :), 'LineWidth', 1.5); % Green triangles
 hold on
-geoscatter(cl3_lan, cl3_lon, 80, '^', ...
+geoscatter(cl3_lan, cl3_lon, 200, '^', ...
     'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(3, :), 'LineWidth', 1.5); % Blue triangles
 hold on
-geoscatter(cl4_lan, cl4_lon, 80, '^', ...
-    'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(4, :), 'LineWidth', 1.5); % Yellow triangles
+geoscatter(cl4_lan, cl4_lon, 200, '^', ...
+    'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(4, :), 'LineWidth', 1.5); % Cyan triangles
 hold on
-geoscatter(cl5_lan, cl5_lon, 80, '^', ...
+geoscatter(cl5_lan, cl5_lon, 200, '^', ...
     'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(5, :), 'LineWidth', 1.5); % Orange triangles
 hold on
-geoscatter(cl6_lan, cl6_lon, 80, '^', ...
+geoscatter(cl6_lan, cl6_lon, 200, '^', ...
     'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(6, :), 'LineWidth', 1.5); % Purple triangles
 hold on
-geoscatter(cl7_lan, cl7_lon, 80, '^', ...
+geoscatter(cl7_lan, cl7_lon, 200, '^', ...
     'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', colors(7, :), 'LineWidth', 1.5); % Olive triangles
 hold on
 geolimits(lat_limits, lon_limits)
@@ -187,13 +187,13 @@ ax = gca;
 ax.TickLabelFormat = 'dd';
 ax.FontSize = FontSize;
 geoscatter(event_info.latitude, event_info.longitude, 350, 'p', ...
-    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1); % Gold pentagon
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1.5); % Gold pentagon
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("Seismic station locations - clusters", 'FontWeight', 'bold')
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
+ax.LineWidth = widthLinesGraphs; 
 ax.FontSize = FontSize;
 
 
@@ -661,7 +661,7 @@ obj_stem_par = stem_par(obj_stem_data, 'exponential',obj_stem_par_constraints);
 
 % obj_stem_model = SP_model_estimation(obj_stem_data, obj_stem_par);
 obj_stem_model = stem_model(obj_stem_data, obj_stem_par);
-obj_stem_model.stem_data.standardize;
+% obj_stem_model.stem_data.standardize;
 
 % Starting values
 obj_stem_par.beta = obj_stem_model.get_beta0;
@@ -673,8 +673,13 @@ obj_stem_par.sigma_eps = diag([0.28 0.40 0.90]);             % error variance on
 obj_stem_model.set_initial_values(obj_stem_par);
 obj_stem_EM_options = stem_EM_options();
 obj_stem_EM_options.exit_tol_par = 0.002;                          % EM algorithm stops if the maximum relative norm of the model parameters between two consecutive iterations EM is below this value
-obj_stem_EM_options.max_iterations = 1000;                            % max iterations EM algorithm
-obj_stem_model.EM_estimate(obj_stem_EM_options);            
+obj_stem_EM_options.max_iterations = 1000;                         % max iterations EM algorithm
+
+
+tic;    % avvia timer solo per l’EM
+obj_stem_model.EM_estimate(obj_stem_EM_options);
+time_EM = toc;   % tempo totale EM in secondi
+
 obj_stem_model.set_varcov;                                         % variance-covariance matrix of the estimated model parameters (std)
 obj_stem_model.print()
 obj_stem_model.print_par()
@@ -694,26 +699,40 @@ statistics_md.R2_v = obj_stem_model.stem_validation_result{1}.cv_R2_s;
 statistics_md.EM_iterations = obj_stem_model.stem_EM_result.iterations;
 statistics_md.res = obj_stem_model.stem_validation_result{1}.res_back;              % measure unit of the problem
 statistics_md.RMSE_v = sqrt(mean(statistics_md.res.^2));
+statistics_md.time_EM = time_EM;                                                    % tempo totale numero iterazioni
+
+fprintf("Tempo totale EM: %.4f secondi\n", time_EM);
+
 
 %% Residuals analysis
-res_sta =  obj_stem_model.stem_validation_result{1}.res;
+res_sta = obj_stem_model.stem_validation_result{1}.res;
 
-% Plot residuals
+% Residual diagnostics
 figure;
-subplot(2,1,1); autocorr(res_sta); title('ACF of res\_sta');
-subplot(2,1,2); plot(res_sta); title('Residuals: res\_sta');
 
-% Autocorrelation test
-[h_sta, p_sta] = lbqtest(res_sta);
+% 1) Autocorrelation function (ACF)
+subplot(3,1,1);
+autocorr(res_sta);
+title('ACF of res\_sta');
 
-% Test for ARCH effects (heteroscedasticity)
-[h_arch_sta, p_arch_sta] = archtest(res_sta);
+% 2) Time-series plot of residuals
+subplot(3,1,2);
+plot(res_sta);
+title('Residuals: res\_sta');
+xlabel('Index');
+ylabel('Value');
 
-% Perform statistical tests
+% 3) QQ-plot
+subplot(3,1,3);
+qqplot(res_sta);
+title('QQ-plot of res\_sta');
+
+% Statistical tests
+[h_sta, p_sta] = lbqtest(res_sta);              % Ljung–Box
+[h_arch_sta, p_arch_sta] = archtest(res_sta);   % ARCH test
+
 statistics_md.res_test_lbqtest = [h_sta, p_sta];
 statistics_md.res_test_archtest = [h_arch_sta, p_arch_sta];
-
-save("worspaces tries\m3ns.mat")
 
 %% PGA mapping
 lat = 40.73:(0.001/3):40.91;
@@ -737,6 +756,7 @@ obj_stem_krig_options = stem_krig_options();
 obj_stem_krig_options.block_size = 500;
 
 obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
+save("worspaces tries\m3ns.mat")
 
 %% PGA ShakeMap
 pga_spatial_prediction = obj_stem_krig_result{1};
