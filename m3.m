@@ -21,8 +21,8 @@ data_radius = 10;                                       % km
 
 
 % Settings for graphs
-FontSize = 22;
-widthLinesGraphs = 2;
+fs = 10;       % font size
+lw = 1.5;      % line width
 
 
 %% INGV stationlist file reading:
@@ -298,18 +298,19 @@ tiledlayout(1, 3, 'Padding', 'compact', 'TileSpacing', 'compact');
 % === Plot 1: Seismic Station Locations ===
 nexttile
 geoscatter(station_data.latitude, station_data.longitude, 60, '^', ...
-    'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', [0.85 0 0], 'LineWidth', 1.5); % Red triangles
+    'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', [0.85 0 0], 'LineWidth', lw); % Red triangles
 hold on
 geoscatter(event_info.latitude, event_info.longitude, 150, 'p', ...
-    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1); % Gold pentagon
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', lw); % Gold pentagon
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("Seismic station locations (PGA)", 'FontWeight', 'bold')
 legend(["Seismic stations", "Epicenter"], 'Location', 'southoutside', 'Orientation', 'horizontal')
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = FontSize;
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
 
 
 % === Plot 2: Seismic Stations and Smartphones (PSA) ===
@@ -329,8 +330,9 @@ legend(["Seismic stations", "Epicenter", "Smartphone locations (PSA)"], ...
     'Location', 'southoutside', 'Orientation', 'horizontal')
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = FontSize;
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
 
 % === Plot 3: Seismic Stations and Felt Reports (PSfA) ===
 nexttile
@@ -349,17 +351,16 @@ legend(["Seismic stations", "Epicenter", "Felt report locations (CPGA)"], ...
     'Location', 'southoutside', 'Orientation', 'horizontal')
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = FontSize;
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
 
 
 
 %%%%%%%%%%%%%%%%%
-figure
-tiledlayout(2, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
 
 % === Plot 1: Stations' PGA ===
-nexttile
+figure
 gs1 = geoscatter(station_data.latitude, station_data.longitude, 50, log10(station_data.pga), 'o', 'filled');
 gs1.MarkerEdgeColor = [0 0 0];
 hold on
@@ -376,16 +377,17 @@ cb1.Label.FontWeight = 'bold';
 cb1.TickLabelInterpreter = 'tex';
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = FontSize;  
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
 
 % === Plot 2: Smartphones' PGA ===
-nexttile
+figure
 gs2 = geoscatter(EQN_data_subset.latitude, EQN_data_subset.longitude, 50, log10(EQN_data_subset.max_acc), 'o', 'filled');
 gs2.MarkerEdgeColor = [0 0 0];
 hold on
 geoscatter(event_info.latitude, event_info.longitude, 150, 'p', ...
-    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1);
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1.2);
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("Smartphones' log_{10}(PSA)", 'FontWeight', 'bold')
@@ -397,16 +399,17 @@ cb2.Label.FontWeight = 'bold';
 cb2.TickLabelInterpreter = 'tex';
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = FontSize;  
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
 
 % === Plot 3: Smartphones' Felt PGA ===
-nexttile
+figure
 gs3 = geoscatter(EQN_felt_subset.latitude, EQN_felt_subset.longitude, 50, log10(EQN_felt_subset.PSfA), 'o', 'filled');
 gs3.MarkerEdgeColor = [0 0 0];
 hold on
 geoscatter(event_info.latitude, event_info.longitude, 150, 'p', ...
-    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1);
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1.2);
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("User felt reoports' log_{10}(PSfA)", 'FontWeight', 'bold')
@@ -418,13 +421,13 @@ cb3.Label.FontWeight = 'bold';
 cb3.TickLabelInterpreter = 'tex';
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = FontSize;  
+ax.FontSize = FontSize;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
+  
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
-figure
-tiledlayout(2, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
 
 % Compute common color limits
 all_vals = [log10(station_data.pga); log10(EQN_data_subset.max_acc); log10(EQN_felt_subset.PSfA)];
@@ -432,7 +435,7 @@ vmin = min(all_vals);
 vmax = max(all_vals);
 
 % === Plot 1: Stations' PGA ===
-nexttile
+figure
 gs1 = geoscatter(station_data.latitude, station_data.longitude, 80, log10(station_data.pga), 'o', 'filled');
 gs1.MarkerEdgeColor = [0 0 0];
 hold on
@@ -444,11 +447,17 @@ title("Seismic stations' log_{10}(PGA)", 'FontWeight', 'bold')
 colormap('winter');
 clim([vmin, vmax])
 ax = gca;
-ax.TickLabelFormat = 'dd';
-ax.FontSize = FontSize;
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
+cb = colorbar(gca, 'Location', 'eastoutside');  % attach to last axes
+cb.Label.String = 'log_{10} acceleration';
+cb.Label.FontSize = 10;
+cb.Label.FontWeight = 'bold';
+cb.TickLabelInterpreter = 'tex';
 
 % === Plot 2: Smartphones' PSmA ===
-nexttile
+figure
 gs2 = geoscatter(EQN_data_subset.latitude, EQN_data_subset.longitude, 80, log10(EQN_data_subset.max_acc), 'o', 'filled');
 gs2.MarkerEdgeColor = [0 0 0];
 hold on
@@ -460,26 +469,31 @@ title("Smartphones' log_{10}(PSmA)", 'FontWeight', 'bold')
 colormap('winter');
 clim([vmin, vmax])
 ax = gca;
-ax.TickLabelFormat = 'dd';
-ax.FontSize = FontSize;
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
+cb = colorbar(gca, 'Location', 'eastoutside');  % attach to last axes
+cb.Label.String = 'log_{10} acceleration';
+cb.Label.FontSize = 10;
+cb.Label.FontWeight = 'bold';
+cb.TickLabelInterpreter = 'tex';
 
 % === Plot 3: User Reports' CFI ===
-nexttile
+figure
 gs3 = geoscatter(EQN_felt_subset.latitude, EQN_felt_subset.longitude, 80, log10(EQN_felt_subset.PSfA), 'o', 'filled');
 gs3.MarkerEdgeColor = [0 0 0];
 hold on
 geoscatter(event_info.latitude, event_info.longitude, 350, 'p', ...
-    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1);
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1.2);
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("User felt reports' log_{10}(CPGA)", 'FontWeight', 'bold')
 colormap('winter');
 clim([vmin, vmax])
 ax = gca;
-ax.TickLabelFormat = 'dd';
-ax.FontSize = FontSize;
-
-% === Shared Colorbar (Vertical, attached to last plot) ===
+ax.FontSize = fs;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
 cb = colorbar(gca, 'Location', 'eastoutside');  % attach to last axes
 cb.Label.String = 'log_{10} acceleration';
 cb.Label.FontSize = 10;
@@ -691,13 +705,15 @@ corrcov(obj_stem_model.stem_par.v_p)
 
 statistics_md = {};
 statistics_md.sigma_eps = obj_stem_model.stem_EM_result.stem_par.sigma_eps;
-statistics_md.v_p = obj_stem_model.stem_EM_result.stem_par.v_p;
+statistics_md.beta = obj_stem_model.stem_EM_result.stem_par.beta;
+statistics_md.v_p_cov = obj_stem_model.stem_EM_result.stem_par.v_p;
+statistics_md.v_p_cor = corrcov(obj_stem_model.stem_par.v_p);
 statistics_md.theta_p = obj_stem_model.stem_EM_result.stem_par.theta_p;
 
 statistics_md.R2_t = obj_stem_model.stem_EM_result.R2;
 statistics_md.R2_v = obj_stem_model.stem_validation_result{1}.cv_R2_s;
 statistics_md.EM_iterations = obj_stem_model.stem_EM_result.iterations;
-statistics_md.res = obj_stem_model.stem_validation_result{1}.res_back;              % measure unit of the problem
+statistics_md.res = 10.^(obj_stem_model.stem_validation_result{1}.res);              % measure unit of the problem
 statistics_md.RMSE_v = sqrt(mean(statistics_md.res.^2));
 statistics_md.time_EM = time_EM;                                                    % tempo totale numero iterazioni
 
@@ -705,34 +721,46 @@ fprintf("Tempo totale EM: %.4f secondi\n", time_EM);
 
 
 %% Residuals analysis
-res_sta = obj_stem_model.stem_validation_result{1}.res;
+res_sta = statistics_md.res;
+fitted = 10.^(obj_stem_model.stem_validation_result{1}.y_hat_back);
 
 % Residual diagnostics
 figure;
 
+fs = 10;       % font size
+lw = 1.5;      % line width
+
 % 1) Autocorrelation function (ACF)
-subplot(3,1,1);
+subplot(1,3,1);
 autocorr(res_sta);
-title('ACF of res\_sta');
+title('ACF of residuals – SM-LGP_3', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
 
 % 2) Time-series plot of residuals
-subplot(3,1,2);
-plot(res_sta);
-title('Residuals: res\_sta');
-xlabel('Index');
-ylabel('Value');
+subplot(1,3,2);
+scatter(fitted, res_sta, 'filled');
+title('Residuals vs Fitted – SM-LGP_3', 'FontSize', fs);
+xlabel('Fitted values', 'FontSize', fs);
+ylabel('Residuals', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
+grid on;
 
 % 3) QQ-plot
-subplot(3,1,3);
+subplot(1,3,3);
 qqplot(res_sta);
-title('QQ-plot of res\_sta');
+title('ACF – SM-LGP_3', 'Interpreter','tex', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
+set(gcf, 'Position', [100 100 1200 300]);
 
 % Statistical tests
 [h_sta, p_sta] = lbqtest(res_sta);              % Ljung–Box
 [h_arch_sta, p_arch_sta] = archtest(res_sta);   % ARCH test
+[h_sw, p_sw, W_sw] = swtest(res_sta, 0.05);     % Shapiro–Wilk
 
-statistics_md.res_test_lbqtest = [h_sta, p_sta];
-statistics_md.res_test_archtest = [h_arch_sta, p_arch_sta];
+statistics_md.res_test_lbqtest   = [h_sta, p_sta];
+statistics_md.res_test_archtest  = [h_arch_sta, p_arch_sta];
+statistics_md.res_test_shapiroW  = [h_sw, p_sw, W_sw];
+
 
 %% PGA mapping
 lat = 40.73:(0.001/3):40.91;
@@ -788,13 +816,15 @@ c2.Label.FontWeight = 'bold';
 c2.TickLabelInterpreter = 'tex';
 hold on
 geoplot(italy, 'k', 'LineWidth', 2);  % 'k' = black line
-title("Shakemap employing trivariate spatial model")
+title("Shakemap employing PGA + PSA + CPGA spatial model")
 geolimits(lat_limits, lon_limits)
 hold on
 geoscatter(event_info.latitude, event_info.longitude, 100, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'y', 'LineWidth', 1.5);
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = 12;
+ax.FontSize = 14;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
+set(gcf, 'Position', [100 100 600 500]);
 
 save("worspaces tries\m3ns.mat")

@@ -86,10 +86,6 @@ station_data.longitude = station_data.longitude(L);
 station_data.pga = station_data.pga(L);
 station_data.epi_separation = station_data.epi_separation(L);
 
-%% After filtering the data
-
-
-
 %% DCM estimation (only spatial)
 
 obj_stem_gridlist_p = stem_gridlist();
@@ -201,7 +197,11 @@ obj_stem_model.set_initial_values(obj_stem_par);
 obj_stem_EM_options = stem_EM_options();
 obj_stem_EM_options.exit_tol_par = 0.002;                           % EM algorithm stops if the maximum relative norm of the model parameters between two consecutive iterations EM is below this value
 obj_stem_EM_options.max_iterations = 1000;                          % max iterations EM algorithm
-obj_stem_model.EM_estimate(obj_stem_EM_options);                    
+
+tic;    % avvia timer solo per l’EM
+obj_stem_model.EM_estimate(obj_stem_EM_options);
+time_EM = toc;   % tempo totale EM in secondi
+
 obj_stem_model.set_varcov;                                          % variance-covariance matrix of the estimated model parameters (std)
 obj_stem_model.print()
 obj_stem_model.print_par()
@@ -213,32 +213,60 @@ corrcov(obj_stem_model.stem_par.v_p)
 
 statistics_md = {};
 statistics_md.sigma_eps = obj_stem_model.stem_EM_result.stem_par.sigma_eps;
-statistics_md.v_p = obj_stem_model.stem_EM_result.stem_par.v_p;
+statistics_md.beta = obj_stem_model.stem_EM_result.stem_par.beta;
+statistics_md.v_p_cov = obj_stem_model.stem_EM_result.stem_par.v_p;
+statistics_md.v_p_cor = corrcov(obj_stem_model.stem_par.v_p);
 statistics_md.theta_p = obj_stem_model.stem_EM_result.stem_par.theta_p;
 
 statistics_md.R2_t = obj_stem_model.stem_EM_result.R2;
 statistics_md.R2_v = obj_stem_model.stem_validation_result{1}.cv_R2_s;
 statistics_md.EM_iterations = obj_stem_model.stem_EM_result.iterations;
-statistics_md.res = obj_stem_model.stem_validation_result{1}.res_back;              % measure unit of the problem
+statistics_md.res = 10.^(obj_stem_model.stem_validation_result{1}.res);              % measure unit of the problem
 statistics_md.RMSE_v = sqrt(mean(statistics_md.res.^2));
+statistics_md.time_EM = time_EM;                                                    % tempo totale numero iterazioni
+
+fprintf("Tempo totale EM: %.4f secondi\n", time_EM);
 
 %% Residuals analysis
-res_sta =  obj_stem_model.stem_validation_result{1}.res;
+res_sta = statistics_md.res;
+fitted = 10.^(obj_stem_model.stem_validation_result{1}.y_hat_back);
 
-% Plot residuals
+% Residual diagnostics
 figure;
-subplot(2,1,1); autocorr(res_sta); title('ACF of res\_sta');
-subplot(2,1,2); plot(res_sta); title('Residuals: res\_sta');
 
-% Autocorrelation test
-[h_sta, p_sta] = lbqtest(res_sta);
+fs = 10;       % font size
+lw = 1.5;      % line width
 
-% Test for ARCH effects (heteroscedasticity)
-[h_arch_sta, p_arch_sta] = archtest(res_sta);
+% 1) Autocorrelation function (ACF)
+subplot(1,3,1);
+autocorr(res_sta);
+title('ACF of residuals – SM-LGP_2', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
 
-% Perform statistical tests
-statistics_md.res_test_lbqtest = [h_sta, p_sta];
-statistics_md.res_test_archtest = [h_arch_sta, p_arch_sta];
+% 2) Time-series plot of residuals
+subplot(1,3,2);
+scatter(fitted, res_sta, 'filled');
+title('Residuals vs Fitted – SM-LGP_2', 'FontSize', fs);
+xlabel('Fitted values', 'FontSize', fs);
+ylabel('Residuals', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
+grid on;
+
+% 3) QQ-plot
+subplot(1,3,3);
+qqplot(res_sta);
+title('ACF – SM-LGP_2', 'Interpreter','tex', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
+set(gcf, 'Position', [100 100 1200 300]);
+
+% Statistical tests
+[h_sta, p_sta] = lbqtest(res_sta);              % Ljung–Box
+[h_arch_sta, p_arch_sta] = archtest(res_sta);   % ARCH test
+[h_sw, p_sw, W_sw] = swtest(res_sta, 0.05);     % Shapiro–Wilk
+
+statistics_md.res_test_lbqtest   = [h_sta, p_sta];
+statistics_md.res_test_archtest  = [h_arch_sta, p_arch_sta];
+statistics_md.res_test_shapiroW  = [h_sw, p_sw, W_sw];
 
 %% PGA mapping
 lat = 40.73:(0.001/3):40.91;
@@ -297,13 +325,15 @@ c2.Label.FontWeight = 'bold';
 c2.TickLabelInterpreter = 'tex';
 hold on
 geoplot(italy, 'k', 'LineWidth', 2);  % 'k' = black line
-title("Shakemap employing PGA + PSmA spatial model")
+title("Shakemap employing PGA + PSA spatial model")
 geolimits(lat_limits, lon_limits)
 hold on
 geoscatter(event_info.latitude, event_info.longitude, 250, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'y', 'LineWidth', 1.5);
 ax = gca;
 ax.TickLabelFormat = 'dd';
-% ax.FontWeight = 'bold';  
-ax.FontSize = 15;
+ax.FontSize = 14;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
+set(gcf, 'Position', [100 100 600 500]);
 
 save("worspaces tries\m2.mat")

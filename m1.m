@@ -159,33 +159,126 @@ corrcov(obj_stem_model.stem_par.v_p)
 
 statistics_md = {};
 statistics_md.sigma_eps = obj_stem_model.stem_EM_result.stem_par.sigma_eps;
-statistics_md.v_p = obj_stem_model.stem_EM_result.stem_par.v_p;
+statistics_md.beta = obj_stem_model.stem_EM_result.stem_par.beta;
+statistics_md.v_p_cov = obj_stem_model.stem_EM_result.stem_par.v_p;
+statistics_md.v_p_cor = corrcov(obj_stem_model.stem_par.v_p);
 statistics_md.theta_p = obj_stem_model.stem_EM_result.stem_par.theta_p;
 
 statistics_md.R2_t = obj_stem_model.stem_EM_result.R2;
 statistics_md.R2_v = obj_stem_model.stem_validation_result{1}.cv_R2_s;
 statistics_md.EM_iterations = obj_stem_model.stem_EM_result.iterations;
-statistics_md.res = obj_stem_model.stem_validation_result{1}.res_back;              % measure unit of the problem
+statistics_md.res = 10.^(obj_stem_model.stem_validation_result{1}.res);              % measure unit of the problem
 statistics_md.RMSE_v = sqrt(mean(statistics_md.res.^2));
 statistics_md.time_EM = time_EM;                                                    % tempo totale numero iterazioni
 
 fprintf("Tempo totale EM: %.4f secondi\n", time_EM);
-
 %% Residuals analysis
-res_sta =  obj_stem_model.stem_validation_result{1}.res;
+res_sta = statistics_md.res;
+fitted = 10.^(obj_stem_model.stem_validation_result{1}.y_hat_back);
 
-% Plot residuals
+% Residual diagnostics
 figure;
-subplot(2,1,1); autocorr(res_sta); title('ACF of res\_sta');
-subplot(2,1,2); plot(res_sta); title('Residuals: res\_sta');
 
-% Autocorrelation test
-[h_sta, p_sta] = lbqtest(res_sta);
+fs = 10;       % font size
+lw = 1.5;      % line width
 
-% Test for ARCH effects (heteroscedasticity)
-[h_arch_sta, p_arch_sta] = archtest(res_sta);
+% 1) Autocorrelation function (ACF)
+subplot(1,3,1);
+autocorr(res_sta);
+title('ACF of residuals – SM-LGP_1', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
 
-% Perform statistical tests
-statistics_md.res_test_lbqtest = [h_sta, p_sta];
-statistics_md.res_test_archtest = [h_arch_sta, p_arch_sta];
+% 2) Time-series plot of residuals
+subplot(1,3,2);
+scatter(fitted, res_sta, 'filled');
+title('Residuals vs Fitted – SM-LGP_1', 'FontSize', fs);
+xlabel('Fitted values', 'FontSize', fs);
+ylabel('Residuals', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
+grid on;
+
+% 3) QQ-plot
+subplot(1,3,3);
+qqplot(res_sta);
+title('ACF – SM-LGP_1', 'Interpreter','tex', 'FontSize', fs);
+set(gca, 'FontSize', fs, 'LineWidth', lw);
+set(gcf, 'Position', [100 100 1200 300]);
+
+% Statistical tests
+[h_sta, p_sta] = lbqtest(res_sta);              % Ljung–Box
+[h_arch_sta, p_arch_sta] = archtest(res_sta);   % ARCH test
+[h_sw, p_sw, W_sw] = swtest(res_sta, 0.05);     % Shapiro–Wilk
+
+statistics_md.res_test_lbqtest   = [h_sta, p_sta];
+statistics_md.res_test_archtest  = [h_arch_sta, p_arch_sta];
+statistics_md.res_test_shapiroW  = [h_sw, p_sw, W_sw];
+
+%% PGA mapping
+lat = 40.73:(0.001/3):40.91;
+lon = 14:(0.002/3):14.26;
+
+[LON,LAT] = meshgrid(lon,lat);
+krig_coordinates = [LAT(:) LON(:)];
+
+obj_stem_krig_grid = stem_grid(krig_coordinates, 'deg','regular','pixel',size(LAT),'square', 0.001799/3,0.002376/3);
+
+X_const = ones(length(krig_coordinates),1);
+X_distance = distdim(distance(event_info.latitude, event_info.longitude, krig_coordinates(:,1), krig_coordinates(:,2)), 'deg', 'km');
+X_distance = sqrt(event_info.depth^2 + 4*R*(R - event_info.depth).*sin(X_distance/(2*R)).^2);
+
+X_krig = [X_const, X_distance];
+
+obj_stem_krig_data = stem_krig_data(obj_stem_krig_grid, X_krig, {'constant','distance'});
+obj_stem_krig = stem_krig(obj_stem_model, obj_stem_krig_data);
+
+obj_stem_krig_options = stem_krig_options();
+obj_stem_krig_options.block_size = 500;
+
+obj_stem_krig_result = obj_stem_krig.kriging(obj_stem_krig_options);
+
+%% PGA ShakeMap
+
+lat_limits = [40.7782   40.8854];
+lon_limits = [14.0275   14.2293];
+
+pga_spatial_prediction = obj_stem_krig_result{1};
+pga = pga_spatial_prediction.y_hat;
+var_pga = pga_spatial_prediction.diag_Var_y_hat;
+
+% PGA and its variance (uncertainty) are backtransformed and masked
+pga_shakemap.pga = 10.^(pga + var_pga/2);
+% pga_shakemap.pga = exp(pga + sqrt(var_pga));
+pga_shakemap.var_pga = (10.^(var_pga)-1) .* 10.^(2*pga+var_pga);
+pga_shakemap.var_pga_logscale = var_pga;
+pga_shakemap.lat = LAT;
+pga_shakemap.lon = LON;
+
+% Shapefiles of napoli - use geoplot to create borders
+borders = readgeotable("maps\napoli.shp");
+italy = borders(strcmp(borders.reg_name, 'Campania'), :);
+
+figure                                             
+gs1 = geoscatter(LAT(:), LON(:), 10, pga_shakemap.pga(:));
+alpha(0.6); % Transparency so coastlines and borders are visible
+geobasemap("streets-light") % Set basemap
+colormap('parula');  % Apply cool colormap here
+colorbar;
+c2 = colorbar;
+c2.Label.String = "Estimated PGA (g)"; % Label for the colorb
+c2.Label.FontSize = 10;    
+c2.Label.FontWeight = 'bold'; 
+c2.TickLabelInterpreter = 'tex';
+hold on
+geoplot(italy, 'k', 'LineWidth', 2);  % 'k' = black line
+title("Shakemap employing PGA spatial model")
+geolimits(lat_limits, lon_limits)
+hold on
+geoscatter(event_info.latitude, event_info.longitude, 250, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'y', 'LineWidth', 1.5);
+ax = gca;
+ax.TickLabelFormat = 'dd';
+ax.FontSize = 14;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
+set(gcf, 'Position', [100 100 600 500]);
+
 save("worspaces tries\m1.mat")
