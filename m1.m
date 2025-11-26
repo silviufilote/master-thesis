@@ -5,8 +5,6 @@ close all
 clearvars
 addpath('src');
 
-load data/output/anomaly_smartphones1_stations1.mat     % static covariate
-
 % Information about the analyzed earthquake
 event_info.date = datetime('2025-03-13 00:25:02');      % date of the earthquake
 event_info.latitude = 40.82;                            % latitude of the earthquake

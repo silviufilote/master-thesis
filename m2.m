@@ -4,9 +4,8 @@ clc
 close all
 clearvars
 addpath('src');
-
-load data/input/EQN_data.mat                            % g acceleration detections -> smarthphones
-load data/output/anomaly_smartphones1_stations1.mat     % static covariate
+                         
+load filtering\PSA_filtered.mat                         % g acceleration detections -> smarthphones (alredy filtered)
 
 % Information about the analyzed earthquake
 event_info.date = datetime('2025-03-13 00:25:02');      % date of the earthquake
@@ -48,43 +47,12 @@ for i = 1 : length(stationlist.features)
     end
 end
 
-%% EQN data filtering:
-% filtering on: window time, distance, maximum acceleration, on a zone capture inside a squared area
-
-% filtering on window time
-L = EQN_shake_sub.data > event_info.date & EQN_shake_sub.data < event_info.date + seconds(10);
-EQN_data_subset = EQN_shake_sub(L,:);
-
-% filtering on distance
-d = distdim(distance(event_info.latitude, event_info.longitude, EQN_data_subset.latitude, EQN_data_subset.longitude), 'deg', 'km');
-L = d < data_radius;
-EQN_data_subset = EQN_data_subset(L,:);
-
-% filtering on the maximum acceleration
-L = EQN_data_subset.max_acc < 5;
-EQN_data_subset = EQN_data_subset(L,:);
-
-% filtering on the zone
-L = EQN_data_subset.longitude > 14 & EQN_data_subset.longitude < 14.21 & EQN_data_subset.latitude < 40.88;  % filtering on the zone
-EQN_data_subset = EQN_data_subset(L,:);
-
-% Remove duplicate latitude-longitude pairs
-[~, uniqueIdx] = unique([EQN_data_subset.latitude, EQN_data_subset.longitude], 'rows');
-EQN_data_subset = EQN_data_subset(uniqueIdx, :);
-
-% Change name to PSA (peak smartphone accelearation) is already in [g]
-EQN_data_subset.PSA = EQN_data_subset.max_acc;
-
-
-%% INGV data filtering
-% filtering only on the radius
-% stations have accurate accelerations
-
 L = station_data.epi_separation <= data_radius;
 station_data.latitude = station_data.latitude(L);
 station_data.longitude = station_data.longitude(L);
 station_data.pga = station_data.pga(L);
 station_data.epi_separation = station_data.epi_separation(L);
+
 
 %% DCM estimation (only spatial)
 
@@ -111,9 +79,9 @@ ground.X_beta_name{1} = {'constant', 'distance'};
 
 
 %%%% II equation of the DCM model:
-ground.Y{2} = log10(EQN_data_subset.PSA);        % 2nd log respose varible: smarthphones acceleration
+ground.Y{2} = log10(PSA_filtered.PSA);        % 2nd log respose varible: smarthphones acceleration
 ground.Y_name{2} = 'EQN PSA';
-ground.coordinates{2} = [EQN_data_subset.latitude, EQN_data_subset.longitude];
+ground.coordinates{2} = [PSA_filtered.latitude, PSA_filtered.longitude];
 
 ground.X_p{2} = ones(length(ground.Y{2}),1);    % covariate davanti alla latente costante
 ground.X_p_name{2} = {'constant'};
@@ -166,8 +134,8 @@ for i = 1:clusters - 1
 end
 
 
-% Select 30% of unique rows from the EQN_data_subset for smartphone validation
-num_total = height(EQN_data_subset);
+% Select 30% of unique rows from the PSA_filtered for smartphone validation
+num_total = height(PSA_filtered);
 num_val = round(0.1 * num_total);  % 10% of the data
 % S_val_sma = randperm(num_total, num_val);
 
@@ -188,15 +156,14 @@ obj_stem_model = stem_model(obj_stem_data, obj_stem_par);
 % obj_stem_model.stem_data.standardize;
 
 % Starting values
-obj_stem_par.beta = obj_stem_model.get_beta0;                       % provides the initial values of the beta parameter
-obj_stem_par.theta_p = 0.02;                                         % must be provided in [km] regardless of the unit of measure of the gri
-obj_stem_par.v_p = [1, 0;
-                    0, 1];                                          % covariance matrix of the latents variables
-obj_stem_par.sigma_eps = diag([0.0001 0.4]);                   % error variance one for the stations and one for the smarthphones
+obj_stem_par.beta = obj_stem_model.get_beta0;                       
+obj_stem_par.theta_p = 0.0194;                                      
+obj_stem_par.v_p = [0.165377529673546,0.061776230661756;0.061776230661756,0.051545111569297];                                        
+obj_stem_par.sigma_eps = diag([0.0001 0.4]);                        
 obj_stem_model.set_initial_values(obj_stem_par);
 obj_stem_EM_options = stem_EM_options();
-obj_stem_EM_options.exit_tol_par = 0.002;                           % EM algorithm stops if the maximum relative norm of the model parameters between two consecutive iterations EM is below this value
-obj_stem_EM_options.max_iterations = 1000;                          % max iterations EM algorithm
+obj_stem_EM_options.exit_tol_par = 0.002;                          
+obj_stem_EM_options.max_iterations = 3000;                           
 
 tic;    % avvia timer solo per l’EM
 obj_stem_model.EM_estimate(obj_stem_EM_options);
