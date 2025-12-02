@@ -77,7 +77,7 @@ EQN_data_subset = EQN_data_subset(L,:);
 [~, uniqueIdx] = unique([EQN_data_subset.latitude, EQN_data_subset.longitude], 'rows');
 EQN_data_subset = EQN_data_subset(uniqueIdx, :);
 
-% Change name to PSA (peak smartphone accelearation) is already in [g]
+% Change name to PSA (peak smartphone accelearation) is already in [%g] = cm
 EQN_data_subset.PSA = EQN_data_subset.max_acc;
 
 %% EQN felt filtering - felt reports
@@ -99,8 +99,8 @@ EQN_felt_subset = EQN_felt_subset(L,:);
 [~, uniqueIdx] = unique([EQN_felt_subset.latitude, EQN_felt_subset.longitude], 'rows');
 EQN_felt_subset = EQN_felt_subset(uniqueIdx, :);
 
-% Calcolo della PGA in g secondo Faenza & Michelini (2010) [g]
-EQN_felt_subset.CPGA = 10.^((EQN_felt_subset.intensity - 1.68) / 2.58) / 100;  % [g] dividing /100 ottengo m/s^2
+% Calcolo della PGA in g secondo Faenza & Michelini (2010) [%g]
+EQN_felt_subset.CPGA = 10.^((EQN_felt_subset.intensity - 1.68) / 2.58) / 100;  % unit [%g]
 
 
 %% INGV data filtering
