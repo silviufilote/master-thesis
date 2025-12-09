@@ -286,7 +286,7 @@ geobasemap("streets-light") % Set basemap
 colormap('parula');  % Apply cool colormap here
 colorbar;
 c2 = colorbar;
-c2.Label.String = "Estimated PGA (g)"; % Label for the colorb
+c2.Label.String = "Estimated PGA (%g)"; % Label for the colorb
 c2.Label.FontSize = 10;    
 c2.Label.FontWeight = 'bold'; 
 c2.TickLabelInterpreter = 'tex';

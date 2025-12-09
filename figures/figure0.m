@@ -5,7 +5,7 @@ close all
 clearvars
 addpath('src');
 
-load ..\'worspaces tries'\m3.mat  
+load ..\worspaces\m3.mat
 
 %% M3 figures for thesis
 

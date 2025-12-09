@@ -450,7 +450,7 @@ geobasemap("streets-light") % Set basemap
 colormap('parula');  % Apply cool colormap here
 colorbar;
 c2 = colorbar;
-c2.Label.String = "Estimated PGA (g)"; % Label for the colorb
+c2.Label.String = "Estimated PGA (%g)"; % Label for the colorb
 c2.Label.FontSize = 10;    
 c2.Label.FontWeight = 'bold'; 
 c2.TickLabelInterpreter = 'tex';
@@ -462,7 +462,7 @@ hold on
 geoscatter(event_info.latitude, event_info.longitude, 100, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'y', 'LineWidth', 1.5);
 ax = gca;
 ax.TickLabelFormat = 'dd';
-ax.FontSize = fs;
+ax.FontSize = 14;
 ax.LatitudeLabel.String = '';
 ax.LongitudeLabel.String = '';
 set(gcf, 'Position', [100 100 600 500]);

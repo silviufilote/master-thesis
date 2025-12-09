@@ -2,50 +2,77 @@ clc
 close all
 clearvars
 
-% Vettore coordinate
-x = 0:1:99;
-y = 0:1:99;
+theta = 2;                    % correlation length
+gridSides = [50 100];       % 100x100 and 1000x1000
+nCases    = numel(gridSides);
 
-% Create a grid of coordinates (X, Y) using 'x' and 'y' vectors.
-[X, Y] = meshgrid(x, y);
+% Prealloc per i tempi
+tDist   = NaN(nCases,1);      % tempo per pdist2
+tCorr   = NaN(nCases,1);      % tempo per exp(-dist/theta)
+tSample = NaN(nCases,1);      % tempo per mvnrnd
+tTotal  = NaN(nCases,1);      % tempo totale se vuoi
 
-% Convert the grid coordinates (X, Y) into a 2D array 'coord'.
-coord = [X(:) Y(:)];
+for k = 1:nCases
+    n = gridSides(k);
+    nPoints = n^2;
+    fprintf('\n=== Grid %dx%d (nPoints = %d) ===\n', n, n, nPoints);
 
-% Plot the coordinates as points.
-% Set the aspect ratio of the plot to be equal.
-figure
-plot(coord(:,1), coord(:,2), '.');
-axis equal
+    try
+        % Coordinate su griglia regolare
+        x = 0:n-1;
+        y = 0:n-1;
+        [X, Y] = meshgrid(x, y);
+        coord = [X(:) Y(:)];
 
-% Set a correlation length parameter.
-theta = 2;
+        % Timer complessivo
+        tStartTotal = tic;
 
-% Calculate pairwise Euclidean distances between points.
-% distance matrix
-dist = pdist2(coord, coord, "euclidean");
+        % 1) Distanze
+        tStart = tic;
+        dist   = pdist2(coord, coord, "euclidean");
+        tDist(k) = toc(tStart);
+        fprintf('Time dist (pdist2):            %.3f s\n', tDist(k));
 
+        % 2) Correlazione
+        tStart = tic;
+        sp_corr = exp(-dist/theta);
+        tCorr(k) = toc(tStart);
+        fprintf('Time corr (exp(-dist/theta)):  %.3f s\n', tCorr(k));
 
-% Display the distance matrix as an image.
-figure
-imagesc(dist);
+        % 3) Simulazione GP (Cholesky + estrazione)
+        tStart = tic;
+        v = mvnrnd(zeros(1, size(dist,1)), sp_corr, 1);
+        tSample(k) = toc(tStart);
+        fprintf('Time sample (mvnrnd):          %.3f s\n', tSample(k));
 
-% Calculate the spatial correlation using the exponential
-% correlation function.
-sp_corr = exp(-dist/theta);
+        tTotal(k) = toc(tStartTotal);
+        fprintf('Total time:                    %.3f s\n', tTotal(k));
 
-% Display the spatial correlation matrix as an image.
-figure
-imagesc(sp_corr);
+        % Reshape per eventuale visualizzazione (solo se non troppo grande)
+        if n <= 100
+            vGrid = reshape(v, size(X));
+            figure;
+            imagesc(vGrid);
+            clim([-3 3]);
+            colorbar;
+            axis equal tight;
+            title(sprintf('GP sample on %dx%d grid', n, n));
+        end
 
-% GP simulation:
-% Generate a sample from a multivariate Gaussian distribution.
-v = mvnrnd(zeros(1, size(dist,1)), sp_corr, 1);
+    catch ME
+        % Se finisci la memoria, lo segnaliamo e lasciamo NaN nei tempi
+        if strcmp(ME.identifier, 'MATLAB:nomem')
+            fprintf('Out of memory for %dx%d grid. Skipping timings.\n', n, n);
+        else
+            rethrow(ME);
+        end
+    end
+end
 
-% Reshape the sample to match the grid shape.
-v = reshape(v, size(X));
+% Costruisci e stampa la tabella riassuntiva
+NumPoints = gridSides'.^2;
+TimingTable = table(gridSides', NumPoints, tDist, tCorr, tSample, tTotal, ...
+    'VariableNames', {'GridSide', 'NumPoints', 'TimeDist', 'TimeCorr', 'TimeSample', 'TimeTotal'});
 
-% Display the generated GP sample as an image.
-imagesc(v)
-clim([-3, 3])   % Set the color limit for the plot.
-colorbar        % Add a color bar to the plot.
+fprintf('\n=== Summary table ===\n');
+disp(TimingTable);

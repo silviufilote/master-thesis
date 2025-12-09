@@ -1,4 +1,5 @@
 
+
 rng(1);
 clc
 close all
@@ -12,12 +13,20 @@ load ..\worspaces\m3.mat
 fs = 22;
 lw = 1.2;
 
-% === Plot 1: Stations' PGA ===
+% Figura unica con 3 pannelli (1 x 3)
 figure
+t = tiledlayout(1,3);
+t.TileSpacing = 'compact';
+t.Padding = 'compact';
+set(gcf, 'Position', [100 100 1400 500]);  % finestra larga orizzontale
+
+% === Plot 1: Stations' PGA ===
+nexttile;
 gs1 = geoscatter(station_data.latitude, station_data.longitude, 80, log(station_data.pga), 'o', 'filled');
 gs1.MarkerEdgeColor = [0 0 0];
 hold on
-geoscatter(event_info.latitude, event_info.longitude, 350, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1);
+geoscatter(event_info.latitude, event_info.longitude, 350, 'p', ...
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1);
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("Seismic stations' log(PGA)", 'FontWeight', 'bold')
@@ -26,56 +35,53 @@ ax.FontSize = fs;
 ax.LineWidth = lw;
 ax.LatitudeLabel.String = '';
 ax.LongitudeLabel.String = '';
-colormap('winter');
-cb = colorbar(gca, 'Location', 'eastoutside');  % attach to last axes
-cb.Label.String = 'log(%g)';
-cb.Label.FontSize = 10;
-cb.Label.FontWeight = 'bold';
-cb.TickLabelInterpreter = 'tex';
-set(gcf, 'Position', [100 100 800 700]);
-
+colormap(ax, 'winter');
+cb1 = colorbar(ax, 'Location', 'eastoutside');
+cb1.Label.String = 'log(%g)';
+cb1.Label.FontSize = 10;
+cb1.Label.FontWeight = 'bold';
+cb1.TickLabelInterpreter = 'tex';
 
 % === Plot 2: Smartphones' PSA ===
-figure
+nexttile;
 gs2 = geoscatter(PSA_filtered.latitude, PSA_filtered.longitude, 80, log(PSA_filtered.PSA), 'o', 'filled');
 gs2.MarkerEdgeColor = [0 0 0];
 hold on
-geoscatter(event_info.latitude, event_info.longitude, 350, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1);
+geoscatter(event_info.latitude, event_info.longitude, 350, 'p', ...
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1);
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("Smartphones' log(PSA)", 'FontWeight', 'bold')
-colormap('winter');
 ax = gca;
 ax.FontSize = fs;
 ax.LineWidth = lw;
 ax.LatitudeLabel.String = '';
 ax.LongitudeLabel.String = '';
-cb = colorbar(gca, 'Location', 'eastoutside');  % attach to last axes
-cb.Label.String = 'log(%g)';
-cb.Label.FontSize = 10;
-cb.Label.FontWeight = 'bold';
-cb.TickLabelInterpreter = 'tex';
-set(gcf, 'Position', [100 100 800 700]);
+colormap(ax, 'winter');
+cb2 = colorbar(ax, 'Location', 'eastoutside');
+cb2.Label.String = 'log(%g)';
+cb2.Label.FontSize = 10;
+cb2.Label.FontWeight = 'bold';
+cb2.TickLabelInterpreter = 'tex';
 
-% === Plot 3: User Reports' CGPA ===
-figure
+% === Plot 3: User reports' CPGA ===
+nexttile;
 gs3 = geoscatter(CPGA_filtered.latitude, CPGA_filtered.longitude, 80, log(CPGA_filtered.CPGA), 'o', 'filled');
 gs3.MarkerEdgeColor = [0 0 0];
 hold on
-geoscatter(event_info.latitude, event_info.longitude, 350, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1.2);
+geoscatter(event_info.latitude, event_info.longitude, 350, 'p', ...
+    'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1.2);
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("User felt reports' log(CPGA)", 'FontWeight', 'bold')
-colormap('winter');
 ax = gca;
 ax.FontSize = fs;
 ax.LineWidth = lw;
 ax.LatitudeLabel.String = '';
 ax.LongitudeLabel.String = '';
-cb = colorbar(gca, 'Location', 'eastoutside');  % attach to last axes
-cb.Label.String = 'log(%g)';
-cb.Label.FontSize = 10;
-cb.Label.FontWeight = 'bold';
-cb.TickLabelInterpreter = 'tex';
-set(gcf, 'Position', [100 100 800 700]);
-
+colormap(ax, 'winter');
+cb3 = colorbar(ax, 'Location', 'eastoutside');
+cb3.Label.String = 'log(%g)';
+cb3.Label.FontSize = 10;
+cb3.Label.FontWeight = 'bold';
+cb3.TickLabelInterpreter = 'tex';
