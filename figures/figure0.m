@@ -10,7 +10,7 @@ load ..\worspaces\m3.mat
 %% M3 figures for thesis
 
 fs = 22;
-lw = 1.2;
+lw = 2;
 
 
 
@@ -77,7 +77,7 @@ geolimits(lat_limits, lon_limits)
 ax = gca;
 ax.TickLabelFormat = 'dd';
 ax.FontSize = fs;
-geoscatter(event_info.latitude, event_info.longitude, 350, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 1.5); % Gold pentagon
+geoscatter(event_info.latitude, event_info.longitude, 400, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', [1 0.8 0], 'LineWidth', 2); % Gold pentagon
 geobasemap("streets-light")
 geolimits(lat_limits, lon_limits)
 title("Seismic station locations - clusters", 'FontWeight', 'bold')

@@ -263,7 +263,8 @@ colormap('parula');  % Apply cool colormap here
 colorbar;
 c2 = colorbar;
 c2.Label.String = "Estimated PGA (%g)"; % Label for the colorb
-c2.Label.FontSize = 10;    
+c2.Label.FontSize = 15; 
+c2.LineWidth = 2;   
 c2.Label.FontWeight = 'bold'; 
 c2.TickLabelInterpreter = 'tex';
 hold on
@@ -271,12 +272,17 @@ geoplot(italy, 'k', 'LineWidth', 2);  % 'k' = black line
 title("Shakemap employing PGA spatial model")
 geolimits(lat_limits, lon_limits)
 hold on
-geoscatter(event_info.latitude, event_info.longitude, 250, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'y', 'LineWidth', 1.5);
+geoscatter(event_info.latitude, event_info.longitude, 400, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'r', 'LineWidth', 2);
 ax = gca;
 ax.TickLabelFormat = 'dd';
-ax.FontSize = 14;
+ax.FontSize = 20;
 ax.LatitudeLabel.String = '';
 ax.LongitudeLabel.String = '';
-set(gcf, 'Position', [100 100 600 500]);
+set(gcf, 'Position', [100 100 1000 900]);
+pos = ax.Position;  % posizione normalizzata dell'axes nella figura
+
+annotation('rectangle', pos, ...
+    'Color', 'k', ...      % colore bordo
+    'LineWidth', 2);       % spessore bordo
 
 save("worspaces tries\m1.mat")

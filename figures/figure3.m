@@ -11,7 +11,7 @@ load ..\worspaces\m3.mat
 %% M3 figures for thesis
 
 fs = 22;
-lw = 1.2;
+lw = 2;
 
 % Figura unica con 3 pannelli (1 x 3)
 figure

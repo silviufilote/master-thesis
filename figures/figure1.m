@@ -10,7 +10,7 @@ load ..\worspaces\m3.mat
 %% M3 figures for thesis
 
 fs = 22;
-lw = 1.2;
+lw = 2;
 
 figure('Position', [0, 0, 1080, 1080])
 geoscatter(station_data.latitude, station_data.longitude, 200, '^', 'MarkerEdgeColor', [0 0 0], 'MarkerFaceColor', [0.85 0 0], 'LineWidth', 1.5); % INGV stations
