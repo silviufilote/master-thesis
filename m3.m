@@ -475,3 +475,75 @@ annotation('rectangle', pos, ...
     'LineWidth', 2);       % spessore bordo
 
 save("worspaces tries\prova m3.mat")
+
+
+
+
+
+%%%%%%%%%%%%%%%%%
+
+
+% --- Discrete colormap (HCL-inspired, sequential) ---
+cmap_discrete = [
+     8/255   48/255 107/255;   % deep blue
+    33/255 113/255 181/255;   % blue
+    107/255 174/255 214/255;  % light blue
+    161/255 217/255 155/255;  % green
+    254/255 224/255 139/255;  % yellow
+    253/255 174/255  97/255;  % orange
+    230/255  85/255  13/255   % dark orange
+];
+
+% PGA class boundaries (%g)
+pga_bounds = [0 0.05 0.10 0.15 0.20 0.25 0.30 0.35];
+
+
+figure
+
+% --- Shakemap ---
+gs1 = geoscatter(LAT(:), LON(:), 10, pga_shakemap.pga(:), 'filled');
+alpha(0.6);  % transparency
+geobasemap("streets-light")
+
+% --- Discrete colormap ---
+colormap(cmap_discrete);
+caxis([pga_bounds(1) pga_bounds(end)])
+
+% --- Colorbar ---
+c2 = colorbar;
+c2.Ticks = pga_bounds;
+c2.TickLabels = string(pga_bounds);
+c2.Label.String = "Estimated PGA (%g)";
+c2.Label.FontSize = 15;
+c2.Label.FontWeight = 'bold';
+c2.LineWidth = 2;
+c2.TickLabelInterpreter = 'tex';
+
+hold on
+
+% --- Coastline / borders ---
+geoplot(italy, 'k', 'LineWidth', 2);
+
+% --- Epicenter ---
+geoscatter(event_info.latitude, event_info.longitude, 400, 'p', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'r', 'LineWidth', 2);
+
+% --- Axes formatting ---
+ax = gca;
+ax.TickLabelFormat = 'dd';
+ax.FontSize = 20;
+ax.LatitudeLabel.String = '';
+ax.LongitudeLabel.String = '';
+
+% --- Limits ---
+geolimits(lat_limits, lon_limits)
+
+% --- Title ---
+title("Shakemap employing PGA + PSA + CPGA spatial model")
+
+% --- Figure size ---
+set(gcf, 'Position', [100 100 1000 900]);
+
+% --- Black frame around map ---
+pos = ax.Position;
+annotation('rectangle', pos, 'Color', 'k','LineWidth', 2);
+
